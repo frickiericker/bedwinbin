@@ -5,6 +5,8 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/frickiericker/acol/iomock"
 )
 
 func pop(records <-chan Record) []Record {
@@ -87,6 +89,14 @@ func TestScan_failsOnInvalidInput(t *testing.T) {
 	}
 }
 
+func TestScan_propagateIOError(t *testing.T) {
+	input := new(iomock.FailingIO)
+	records := make(chan Record, 1)
+	if err := Scan(input, records); err != iomock.Error {
+		t.Error("unexpected error:", err)
+	}
+}
+
 func TestDump(t *testing.T) {
 	testCases := []struct {
 		input    []Record
@@ -135,5 +145,16 @@ func TestDump(t *testing.T) {
 		if result != testCase.expected {
 			t.Error("unexpected result:", result)
 		}
+	}
+}
+
+func TestDump_propagateIOError(t *testing.T) {
+	records := make(chan Record, 1)
+	records <- Record{}
+	close(records)
+
+	output := new(iomock.FailingIO)
+	if err := Dump(records, output); err != iomock.Error {
+		t.Error("unexpected error:", err)
 	}
 }
