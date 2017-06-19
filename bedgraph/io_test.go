@@ -1,6 +1,7 @@
 package bedgraph
 
 import (
+	"bytes"
 	"reflect"
 	"strings"
 	"testing"
@@ -82,6 +83,57 @@ func TestScan_failsOnInvalidInput(t *testing.T) {
 
 		if err := Scan(input, records); err == nil {
 			t.Error("unexpected success on parsing: %s", testCase)
+		}
+	}
+}
+
+func TestDump(t *testing.T) {
+	testCases := []struct {
+		input    []Record
+		expected string
+	}{
+		{
+			input:    []Record{},
+			expected: "",
+		},
+		{
+			input: []Record{
+				{"foo", 0, 10, 1.},
+			},
+			expected: "foo\t0\t10\t1\n",
+		},
+		{
+			input: []Record{
+				{"foo", 0, 10, 1.},
+				{"foo", 10, 20, 2.},
+			},
+			expected: "foo\t0\t10\t1\n" + "foo\t10\t20\t2\n",
+		},
+		{
+			input: []Record{
+				{"foo", 0, 10, 1.},
+				{"bar", 1, 11, 2.},
+				{"baz", 2, 12, 3.},
+			},
+			expected: "foo\t0\t10\t1\n" + "bar\t1\t11\t2\n" + "baz\t2\t12\t3\n",
+		},
+	}
+
+	for _, testCase := range testCases {
+		records := make(chan Record, len(testCase.input))
+		for _, rec := range testCase.input {
+			records <- rec
+		}
+		close(records)
+
+		output := new(bytes.Buffer)
+		if err := Dump(records, output); err != nil {
+			t.Error("unexpected error:", err)
+		}
+
+		result := output.String()
+		if result != testCase.expected {
+			t.Error("unexpected result:", result)
 		}
 	}
 }
