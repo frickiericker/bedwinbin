@@ -84,7 +84,7 @@ func TestScan_failsOnInvalidInput(t *testing.T) {
 		records := make(chan Record, 1)
 
 		if err := Scan(input, records); err == nil {
-			t.Error("unexpected success on parsing: %s", testCase)
+			t.Error("unexpected success on parsing:", testCase)
 		}
 	}
 }
